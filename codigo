@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Quiz Interactivo - América del Norte</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #f9f9f9;
+      margin: 0;
+      padding: 20px;
+    }
+    .map-container {
+      position: relative;
+      display: inline-block;
+      margin-top: 20px;
+    }
+    #map {
+      max-width: 100%;
+      height: auto;
+      border: 2px solid #444;
+      cursor: crosshair;
+    }
+    .target-circle {
+      position: absolute;
+      border: 2px dashed rgba(255, 0, 0, 0.5);
+      border-radius: 50%;
+      background-color: rgba(255, 0, 0, 0.2);
+      pointer-events: none;
+      transform: translate(-50%, -50%);
+    }
+    #controls {
+      margin: 20px 0;
+    }
+    button {
+      padding: 10px 15px;
+      margin: 0 5px;
+      cursor: pointer;
+    }
+    #feedback {
+      margin: 15px 0;
+      font-size: 1.2em;
+      min-height: 24px;
+    }
+    .correct { color: green; }
+    .incorrect { color: red; }
+  </style>
+</head>
+<body>
+
+<h1>¿Dónde está...? (América del Norte)</h1>
+<div id="controls">
+  <button id="toggle-circles" onclick="toggleCircles()">Mostrar/Ocultar zonas</button>
+  <button id="next-btn" onclick="nextQuestion()">Siguiente</button>
+</div>
+<p id="question">Cargando...</p>
+<div class="map-container">
+  <img id="map" src="mapa america blanco.png" alt="Mapa de Estados Unidos">
+</div>
+<p id="feedback"></p>
+
+<script>
+  // Ajusta estas coordenadas según tu imagen local
+  const lugares = [
+    { nombre: "Alaska", x: 180, y: 160, r: 50 },
+    { nombre: "Vancouver", x: 250, y: 425, r: 25 },
+    { nombre: "Golden Gate", x: 220, y: 550, r: 25 },
+    { nombre: "Los Angeles", x: 230, y: 600, r: 15 },
+    { nombre: "Grand Canyon", x: 290, y: 600, r: 20 },
+    { nombre: "Yellowstone", x: 335, y: 525, r: 25 },
+    { nombre: "Texas", x: 400, y: 650, r: 30 },
+    { nombre: "Houston", x: 430, y: 680, r: 15 },
+    { nombre: "Chicago", x: 500, y: 550, r: 15 },
+    { nombre: "Atlanta", x: 530, y: 640, r: 10 },
+    { nombre: "Miami", x: 580, y: 700, r: 25 },
+    { nombre: "Washington D.C.", x: 600, y: 580, r: 20 },
+    { nombre: "New York City", x: 610, y: 550, r: 10 },
+    { nombre: "Boston", x: 580, y: 540, r: 15 },
+    { nombre: "Niagara Falls", x: 580, y: 540, r: 10 },
+    { nombre: "Toronto", x: 560, y: 530, r: 5 },
+    { nombre: "Ottawa", x: 575, y: 510, r: 10 },
+    { nombre: "Ontario", x: 500, y: 460, r: 35 },
+    { nombre: "Quebec", x: 600, y: 430, r: 35 }
+  ];
+
+  let current = 0;
+  let circlesVisible = false;
+  const circles = [];
+  let scaleX = 1, scaleY = 1;
+
+  const elements = {
+    question: document.getElementById("question"),
+    feedback: document.getElementById("feedback"),
+    nextBtn: document.getElementById("next-btn"),
+    map: document.getElementById("map"),
+    container: document.querySelector('.map-container')
+  };
+
+  function init() {
+    createCircles();
+    showQuestion();
+    setupEventListeners();
+  }
+
+  function createCircles() {
+    // Limpiar círculos existentes
+    circles.forEach(circle => circle.remove());
+    circles.length = 0;
+    
+    // Crear nuevos círculos
+    lugares.forEach((lugar, index) => {
+      const circle = document.createElement('div');
+      circle.className = 'target-circle';
+      circle.style.width = `${lugar.r * 2}px`;
+      circle.style.height = `${lugar.r * 2}px`;
+      circle.style.left = `${lugar.x}px`;
+      circle.style.top = `${lugar.y}px`;
+      circle.style.display = circlesVisible ? 'block' : 'none';
+      circle.dataset.index = index;
+      
+      elements.container.appendChild(circle);
+      circles.push(circle);
+    });
+  }
+
+  function toggleCircles() {
+    circlesVisible = !circlesVisible;
+    circles.forEach(circle => {
+      circle.style.display = circlesVisible ? 'block' : 'none';
+    });
+    elements.feedback.textContent = circlesVisible ? 
+      "Zonas visibles (modo prueba)" : "";
+  }
+
+  function showQuestion() {
+    elements.question.textContent = `Haz clic en: ${lugares[current].nombre}`;
+    elements.feedback.textContent = '';
+    elements.feedback.className = '';
+  }
+
+  function nextQuestion() {
+    current = (current + 1) % lugares.length;
+    showQuestion();
+  }
+
+  function setupEventListeners() {
+    elements.map.addEventListener('click', (e) => {
+      if (circlesVisible) return; // No evaluar clics en modo prueba
+      
+      const rect = elements.map.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const clickY = e.clientY - rect.top;
+      
+      const lugar = lugares[current];
+      const distancia = Math.sqrt(
+        Math.pow(clickX - lugar.x, 2) + 
+        Math.pow(clickY - lugar.y, 2)
+      );
+      
+      if (distancia <= lugar.r) {
+        elements.feedback.textContent = '✅ ¡Correcto!';
+        elements.feedback.className = 'correct';
+      } else {
+        elements.feedback.textContent = `❌ Incorrecto. Buscabas: ${lugar.nombre}`;
+        elements.feedback.className = 'incorrect';
+      }
+    });
+  }
+
+  // Iniciar cuando la imagen esté cargada
+  elements.map.onload = init;
+  if (elements.map.complete) init();
+</script>
+</body>
+</html>
